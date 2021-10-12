@@ -1,0 +1,4 @@
+*.scv
+.idea/
+chromedriver
+venv/
