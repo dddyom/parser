@@ -7,8 +7,8 @@ from config import *
 
 
 class ProductRow:
-    def __init__(self, product_name: str, execution_technique: str, size: str, year: str, price: str) -> None:
-        self.product_id: int = None
+    def __init__(self, product_id: int, product_name: str, execution_technique: str, size: str, year: str, price: str) -> None:
+        self.product_id: int = product_id
         self.author_id: int = None
 
         self.product_name: str = product_name
@@ -17,13 +17,13 @@ class ProductRow:
         self.year: Dict = self.unraw_year(year)
         self.price: Dict = self.unraw_price(price)
 
-    def set_product_id(self, csv_result: pd.DataFrame) -> int:
-        if csv_result.empty:
-            self.product_id = 0
-
-        else:
-            self.product_id = int(csv_result.iloc[-1]["product_id"]) + 1
-        return self.product_id
+    # def set_product_id(self, csv_result: pd.DataFrame) -> int:
+    #     if csv_result.empty:
+    #         self.product_id = 0
+    #
+    #     else:
+    #         self.product_id = int(csv_result.iloc[-1]["product_id"]) + 1
+    #     return self.product_id
 
     def set_author_id(self, new_author_id):
         self.author_id = new_author_id
@@ -140,13 +140,12 @@ def main():
         csv_product = pd.read_csv(f"{CATALOG_NAME}_product.csv")
 
         unparsed_author_name = raw_data.iloc[i]["author_name"]
-        cur_product = ProductRow(product_name=raw_data.iloc[i]["image_name"],
+        cur_product = ProductRow(product_id=i, product_name=raw_data.iloc[i]["image_name"],
                                  execution_technique=raw_data.iloc[i]["execution_technique"],
                                  size=raw_data.iloc[i]["size"],
                                  year=raw_data.iloc[i]["year"],
                                  price=raw_data.iloc[i]["price"])
         # cur_product.set_product_id(csv_product)
-        cur_product.product_id = i
 
         if unparsed_author_name in list(csv_author["author_name"]):
             author_id = list(csv_author.loc[csv_author["author_name"] == unparsed_author_name, 'author_id'])[-1]
