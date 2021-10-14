@@ -1,4 +1,6 @@
-*.scv
+*.csv
 .idea/
 chromedriver
 venv/
+__pycache__
+
