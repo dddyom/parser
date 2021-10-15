@@ -1,4 +1,5 @@
 import csv
+import math
 import pandas
 import pandas as pd
 from typing import Dict
@@ -34,9 +35,9 @@ class ProductRow:
         size_currency = size_list[-1]
         if len(size_list[:-1]) > 5:
             raise ValueError("unexpected size_list length")
-        length = size_list[0] if len(size_list[:-1]) > 1 else None
-        width = size_list[2] if len(size_list[:-1]) == 3 else None
-        height = size_list[4] if len(size_list[:-1]) == 5 else None
+        length = size_list[0].replace(',', '.') if len(size_list[:-1]) > 1 else None
+        width = size_list[2].replace(',', '.') if len(size_list[:-1]) == 3 else None
+        height = size_list[4].replace(',', '.') if len(size_list[:-1]) == 5 else None
 
         return {"length": length,
                 "width": width,
@@ -45,11 +46,12 @@ class ProductRow:
 
     @staticmethod
     def unraw_year(year: str) -> Dict:
-        if isinstance(year, float):
-            year, year_1 = None, None
-        elif len(year.split()) == 1:
-            year, year_1 = year.split()[0], None
-        else:
+        try:
+            if math.isnan(float(year)):
+                year, year_1 = None, None
+            elif len(year.split()) == 1:
+                year, year_1 = year.split()[0], None
+        except ValueError:
             year, year_1 = year.split('-')[0], year.split('-')[-1]
         return {"year": year,
                 "year_1": year_1}
@@ -87,11 +89,12 @@ class AuthorRow:
 
     @staticmethod
     def unraw_author_year(author_year: str) -> Dict:
-        if isinstance(author_year, float):
-            year_of_birth, year_of_death = None, None
-        elif len(author_year) == 4:
-            year_of_birth, year_of_death = author_year, None
-        else:
+        try:
+            if math.isnan(float(author_year)):
+                year_of_birth, year_of_death = None, None
+            else:
+                year_of_birth, year_of_death = int(author_year), None
+        except ValueError:
             year_of_birth, year_of_death = author_year.split('-')[0], author_year.split('-')[-1]
         return {"year_of_birth": year_of_birth,
                 "year_of_death": year_of_death}
@@ -137,18 +140,21 @@ def main():
 
     for i in range(len(raw_data)):
         csv_author = pd.read_csv(f"{CATALOG_NAME}_author.csv")
-        csv_product = pd.read_csv(f"{CATALOG_NAME}_product.csv")
+        # csv_product = pd.read_csv(f"{CATALOG_NAME}_product.csv")
 
-        unparsed_author_name = raw_data.iloc[i]["author_name"]
+        if str(raw_data.iloc[i]["author_name"]) == "nan":
+            continue
+        else:
+            unparsed_author_name = raw_data.iloc[i]["author_name"]
         cur_product = ProductRow(product_id=i, product_name=raw_data.iloc[i]["image_name"],
                                  execution_technique=raw_data.iloc[i]["execution_technique"],
                                  size=raw_data.iloc[i]["size"],
                                  year=raw_data.iloc[i]["year"],
                                  price=raw_data.iloc[i]["price"])
         # cur_product.set_product_id(csv_product)
-
         if unparsed_author_name in list(csv_author["author_name"]):
             author_id = list(csv_author.loc[csv_author["author_name"] == unparsed_author_name, 'author_id'])[-1]
+
             cur_product.set_author_id(author_id)
 
             write_by_dict(catalog_name=CATALOG_NAME,
@@ -170,3 +176,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    tools.sort_by_folders(SOURCE, CATALOG_NAME)
