@@ -1,7 +1,7 @@
 import os
 import pathlib
 import shutil
-
+import pandas as pd
 
 def check_csv_exist(csv_name: str):
     if os.path.exists(f"{csv_name}.csv"):
@@ -14,6 +14,10 @@ def check_csv_exist(csv_name: str):
 #     for f in os.listdir(src):
 #         if pattern in f:
 #             shutil.copy(os.path.join(src, f), os.path.join(dst, f))
+
+def merge_csv(csv_list):
+    df = pd.concat(map(pd.read_csv, [f"csv/raw/{single_csv}.csv" for single_csv in csv_list]), ignore_index=True)
+    df.to_csv("raw_all.csv", index=False)
 
 
 def move_dir(src: str, dst: str, pattern: str = '*'):
@@ -34,6 +38,6 @@ def sort_by_folders(source: str, catalog_name: str) -> None:
 
 
 if __name__ == "__main__":
-    from config import SOURCE, CATALOG_NAME
-
-    sort_by_folders(SOURCE, catalog_name=CATALOG_NAME)
+    from config import SOURCE, CATALOG_NAME, CATALOG_LIST
+    # merge_csv(CATALOG_LIST)
+    # sort_by_folders(SOURCE, catalog_name=CATALOG_NAME)

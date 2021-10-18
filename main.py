@@ -3,7 +3,6 @@ import pandas as pd
 from selenium import webdriver
 from selenium.common.exceptions import InvalidArgumentException
 
-
 import tools
 from config import *
 
@@ -93,8 +92,13 @@ class AuthorPage(SitePage):
                                                     identifier_name=personal_info_identifier_name)
         raw_personal_info = ''.join((cur_string.text for cur_string in temp_list))
         raw_personal_info_list = raw_personal_info.replace(',', '').split(' ')
-        self.years_of_life = raw_personal_info_list[0]
-        self.place_of_residence = ', '.join(raw_personal_info_list[1:])
+        raw_personal_info_list = [string for string in raw_personal_info_list if string.strip()]
+        try:
+            self.years_of_life = raw_personal_info_list[0]
+            self.place_of_residence = ', '.join(raw_personal_info_list[1:])
+        except IndexError:
+            self.years_of_life = None
+            self.place_of_residence = None
 
     def set_author_description(self, description_identifier_name: str, identifier_type: str = "class") -> None:
         temp_list = self.get_elements_by_identifier(identifier_type=identifier_type,
@@ -130,12 +134,17 @@ class ImagePage(SitePage):
                                                     identifier_name=parameters_identifier_name)
         raw_image_parameters = '\n'.join((cur_string.text for cur_string in temp_list))
         raw_list = raw_image_parameters.split('\n')
-        try:
-            self.execution_technique = raw_list[1]
-            self.size = raw_list[2]
-            self.year = raw_list[3]
-        except IndexError:
-            print(raw_image_parameters, self.image_name)
+        raw_list = [string for string in raw_list if string.strip()]
+        if len(raw_list) == 4:
+            self.execution_technique, self.size, self.year = raw_list[1], raw_list[2], raw_list[3]
+        elif len(raw_list) == 3:
+            self.execution_technique, self.size, self.year = raw_list[1], raw_list[2], None
+        elif len(raw_list) == 2:
+            self.execution_technique, self.size, self.year = raw_list[1], None, None
+        else:
+            self.execution_technique, self.size, self.year = None, None, None
+
+
     def set_price(self, most_price_identifier_name: str, other_price_identifier_name: str,
                   most_price_identifier_type: str = "tag",
                   other_price_identifier_type: str = "class") -> None:
@@ -158,7 +167,6 @@ def main():
     page_counter = 0
     image_counter = 0
     while True:
-        print(f"page count: {page_counter}, image count: {image_counter}")
         images_links_obj = cur_catalog.get_images_links(image_links_class_name="products-item-img")
         images_links = [image_link.get_attribute("href") for image_link in images_links_obj]
         for image_link in images_links:
@@ -169,7 +177,7 @@ def main():
             raw_csv = pd.read_csv(f"{CATALOG_NAME}.csv")
             image_page = ImagePage(driver=cur_catalog.driver, url=image_link)
             author_name_obj = image_page.get_elements_by_identifier(identifier_type="class",
-                                                                identifier_name="author-name_link")[0]
+                                                                    identifier_name="author-name_link")[0]
 
             if author_name_obj.text not in set(list(raw_csv["author_name"])):
                 author_link = author_name_obj.get_attribute("href")
@@ -183,9 +191,9 @@ def main():
                 except ValueError:
                     years_of_life = str(years_of_life)
                 place_of_residence = \
-                raw_csv.loc[raw_csv['author_name'] == author_name_obj.text, "place_of_residence"].values[0]
+                    raw_csv.loc[raw_csv['author_name'] == author_name_obj.text, "place_of_residence"].values[0]
                 author_description = \
-                raw_csv.loc[raw_csv['author_name'] == author_name_obj.text, "author_description"].values[0]
+                    raw_csv.loc[raw_csv['author_name'] == author_name_obj.text, "author_description"].values[0]
                 author_dict = {"author_name": author_name_obj.text, "years_of_life": years_of_life,
                                "place_of_residence": place_of_residence,
                                "author_description": author_description}
@@ -195,7 +203,7 @@ def main():
             parsed_list = [author_dict["author_name"], author_dict["years_of_life"],
                            author_dict["place_of_residence"], author_dict["author_description"],
                            image_dict["image_name"], image_dict["execution_technique"],
-                           image_dict["size"], image_dict["year"], image_dict["price"]]
+                           image_dict["size"], image_dict["year"], image_dict["price"], CATALOG_NAME]
             # print(parsed_list)
             with open(f"{CATALOG_NAME}.csv", 'a') as parsed_csv:
                 writer = csv.writer(parsed_csv)
@@ -208,6 +216,8 @@ def main():
             print(cur_catalog.url)
             cur_catalog.driver.get(cur_catalog.url)
             page_counter += 1
+
+            print(f"page count: {page_counter}, image count: {image_counter}")
         except IndexError:
             print("IndexError")
             print(f"page count: {page_counter}, image count: {image_counter}")
@@ -222,4 +232,7 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # pass
+
+    df = pd.read_csv(f"{CATALOG_NAME}.csv")
+    df.drop_duplicates(inplace=True)
+    df.to_csv(f"{CATALOG_NAME}.csv", index=False)

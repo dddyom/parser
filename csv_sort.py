@@ -8,15 +8,17 @@ from config import *
 
 
 class ProductRow:
-    def __init__(self, product_id: int, product_name: str, execution_technique: str, size: str, year: str, price: str) -> None:
+    def __init__(self, product_id: int, product_name: str, execution_technique: str,
+                 size: str, year: str, price: str, genre: str) -> None:
         self.product_id: int = product_id
         self.author_id: int = None
 
         self.product_name: str = product_name
         self.execution_technique: str = execution_technique
         self.size: Dict = self.unraw_size(size)
-        self.year: Dict = self.unraw_year(year)
+        self.year: Dict = self.unraw_year(str(year))
         self.price: Dict = self.unraw_price(price)
+        self.genre: str = genre
 
     # def set_product_id(self, csv_result: pd.DataFrame) -> int:
     #     if csv_result.empty:
@@ -52,7 +54,10 @@ class ProductRow:
             elif len(year.split()) == 1:
                 year, year_1 = year.split()[0], None
         except ValueError:
-            year, year_1 = year.split('-')[0], year.split('-')[-1]
+            try:
+                year, year_1 = int(year.split('-')[0]), int(year.split('-')[-1])
+            except ValueError:
+                year, year_1 = year, None
         return {"year": year,
                 "year_1": year_1}
 
@@ -117,7 +122,7 @@ def write_by_dict(catalog_name, attr_dict, csv_type):
                      attr_dict['year']['year'], attr_dict['year']['year_1'],
                      attr_dict['price']['price_1'], attr_dict['price']['price_1_currency'],
                      attr_dict['price']['price_2'], attr_dict['price']['price_2_currency'],
-                     attr_dict['price']['price_3'], attr_dict['price']['price_3_currency']]
+                     attr_dict['price']['price_3'], attr_dict['price']['price_3_currency'], attr_dict['genre']]
     else:  # "author"
         attr_list = [attr_dict['author_id'], attr_dict['author_name'],
                      attr_dict['author_year']['year_of_birth'], attr_dict['author_year']['year_of_death'],
@@ -150,7 +155,8 @@ def main():
                                  execution_technique=raw_data.iloc[i]["execution_technique"],
                                  size=raw_data.iloc[i]["size"],
                                  year=raw_data.iloc[i]["year"],
-                                 price=raw_data.iloc[i]["price"])
+                                 price=raw_data.iloc[i]["price"],
+                                 genre=raw_data.iloc[i]["genre"])
         # cur_product.set_product_id(csv_product)
         if unparsed_author_name in list(csv_author["author_name"]):
             author_id = list(csv_author.loc[csv_author["author_name"] == unparsed_author_name, 'author_id'])[-1]
