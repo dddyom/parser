@@ -2,6 +2,7 @@ import os
 import pathlib
 import shutil
 import pandas as pd
+import numpy as np
 
 def check_csv_exist(csv_name: str):
     if os.path.exists(f"{csv_name}.csv"):
@@ -39,5 +40,17 @@ def sort_by_folders(source: str, catalog_name: str) -> None:
 
 if __name__ == "__main__":
     from config import SOURCE, CATALOG_NAME, CATALOG_LIST
-    # merge_csv(CATALOG_LIST)
-    # sort_by_folders(SOURCE, catalog_name=CATALOG_NAME)
+    merge_csv(CATALOG_LIST)
+    sort_by_folders(SOURCE, catalog_name=CATALOG_NAME)
+    # df = pd.read_csv("csv/all/all_product.csv")
+    # for i in range(len(df)):
+    #     # print(df.iloc[i])
+    #     try:
+    #         a = int(df.iloc[i]["length"])
+    #     except ValueError:
+    #         df.iloc[i]["length"] = None
+
+    # for i in df["length"]:
+    #     print(i)
+
+    # df.to_csv("product.csv", index=False)
